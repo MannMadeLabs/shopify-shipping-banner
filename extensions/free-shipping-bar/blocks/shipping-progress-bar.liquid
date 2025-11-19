@@ -1,0 +1,568 @@
+{% comment %}
+  Free Shipping Progress Bar Block
+  Displays dynamic progress toward free shipping threshold
+{% endcomment %}
+
+<div 
+  class="shipping-progress-bar" 
+  data-threshold="{{ block.settings.free_shipping_threshold }}"
+  data-currency-symbol="{{ shop.currency }}"
+  data-show-upsell="{{ block.settings.show_upsell }}"
+  data-upsell-count="{{ block.settings.upsell_product_count }}"
+  style="--progress-color: {{ block.settings.progress_color }}; --bg-color: {{ block.settings.background_color }}; --text-color: {{ block.settings.text_color }};"
+  role="region"
+  aria-label="Free shipping progress tracker"
+>
+  <div class="shipping-progress-bar__container">
+    <!-- Progress Message -->
+    <div 
+      class="shipping-progress-bar__message" 
+      data-progress-message
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {{ block.settings.initial_message }}
+    </div>
+    
+    <!-- Progress Bar -->
+    <div 
+      class="shipping-progress-bar__track"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-label="Progress toward free shipping"
+      data-progress-track
+    >
+      <div class="shipping-progress-bar__fill" data-progress-fill style="width: 0%"></div>
+    </div>
+    
+    <!-- Upsell Section -->
+    {% if block.settings.show_upsell %}
+      <div 
+        class="shipping-progress-bar__upsell" 
+        data-upsell-container 
+        style="display: none;"
+        role="complementary"
+        aria-label="Product recommendations"
+      >
+        <p class="shipping-progress-bar__upsell-title">{{ block.settings.upsell_title }}</p>
+        <div class="shipping-progress-bar__upsell-products" data-upsell-products></div>
+      </div>
+    {% endif %}
+    
+    <!-- Powered by Badge (shown only for free tier) -->
+    <div 
+      class="shipping-progress-bar__badge" 
+      data-branding-badge
+      style="display: none;"
+    >
+      <a 
+        href="https://mannmadelabs.com" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        style="color: #6b7280; text-decoration: none; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; padding-top: 0.5rem;"
+      >
+        <span>Powered by</span>
+        <strong style="color: #111827;">MannMade Labs</strong>
+      </a>
+    </div>
+    
+    <!-- Order Limit Exceeded Message -->
+    <div 
+      class="shipping-progress-bar__limit-exceeded" 
+      data-limit-exceeded
+      style="display: none; margin-top: 1rem; padding: 1rem; background-color: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; text-align: center;"
+    >
+      <p style="margin: 0; color: #991b1b; font-size: 0.875rem; font-weight: 600;">
+        📊 Monthly order limit reached
+      </p>
+      <p style="margin: 0.5rem 0 0 0; color: #7f1d1d; font-size: 0.75rem;">
+        Upgrade to Pro for unlimited orders and smart features
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .shipping-progress-bar {
+    width: 100%;
+    padding: 1rem;
+    background: var(--bg-color, #f9fafb);
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+  }
+  
+  .shipping-progress-bar__container {
+    max-width: 100%;
+  }
+  
+  .shipping-progress-bar__message {
+    color: var(--text-color, #111827);
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    line-height: 1.5;
+  }
+  
+  .shipping-progress-bar__track {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .shipping-progress-bar__fill {
+    height: 100%;
+    background: var(--progress-color, #10b981);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+    will-change: width;
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .shipping-progress-bar__fill {
+      transition: none;
+    }
+  }
+  
+  .shipping-progress-bar__upsell {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .shipping-progress-bar__upsell-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-color, #111827);
+    margin-bottom: 0.75rem;
+  }
+  
+  .shipping-progress-bar__upsell-products {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  @media (max-width: 640px) {
+    .shipping-progress-bar__upsell-products {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  .shipping-progress-bar__upsell-product {
+    display: block;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .shipping-progress-bar__upsell-product:hover,
+  .shipping-progress-bar__upsell-product:focus {
+    border-color: var(--progress-color, #10b981);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .shipping-progress-bar__upsell-product:focus {
+    outline: 2px solid var(--progress-color, #10b981);
+    outline-offset: 2px;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .shipping-progress-bar__upsell-product {
+      transition: none;
+    }
+    .shipping-progress-bar__upsell-product:hover,
+    .shipping-progress-bar__upsell-product:focus {
+      transform: none;
+    }
+  }
+  
+  .shipping-progress-bar__upsell-product img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin-bottom: 0.25rem;
+  }
+  
+  .shipping-progress-bar__upsell-product-title {
+    font-size: 0.75rem;
+    color: var(--text-color, #111827);
+    margin-bottom: 0.25rem;
+  }
+  
+  .shipping-progress-bar__upsell-product-price {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--progress-color, #10b981);
+  }
+</style>
+
+<script>
+  (function() {
+    const block = document.querySelector('.shipping-progress-bar');
+    if (!block) return;
+    
+    // Settings will be fetched from API, fallback to block settings
+    let appSettings = {
+      threshold: parseFloat(block.dataset.threshold) || 50,
+      progressColor: getComputedStyle(block).getPropertyValue('--progress-color').trim() || '#10b981',
+      backgroundColor: getComputedStyle(block).getPropertyValue('--bg-color').trim() || '#f9fafb',
+      textColor: getComputedStyle(block).getPropertyValue('--text-color').trim() || '#111827',
+      showUpsell: block.dataset.showUpsell === 'true',
+      upsellProductCount: parseInt(block.dataset.upsellCount) || 2,
+      belowThresholdMessage: 'Add {amount} more for free shipping!',
+      qualifiedMessage: '🎉 You qualify for free shipping!',
+      upsellTitle: 'Add these to reach free shipping:',
+      enableAnalytics: true
+    };
+    
+    const currencySymbol = block.dataset.currencySymbol || '$';
+    const shopDomain = '{{ shop.permanent_domain }}';
+    
+    const messageEl = block.querySelector('[data-progress-message]');
+    const fillEl = block.querySelector('[data-progress-fill]');
+    const progressTrack = block.querySelector('[data-progress-track]');
+    const upsellContainer = block.querySelector('[data-upsell-container]');
+    const upsellProductsEl = block.querySelector('[data-upsell-products]');
+    
+    // Session ID for tracking (stored in localStorage)
+    let sessionId = localStorage.getItem('spb_session_id');
+    if (!sessionId) {
+      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('spb_session_id', sessionId);
+    }
+    
+    let hasLoggedView = false;
+    let lastCartValue = 0;
+    let hasMetThreshold = false;
+    
+    // Fetch settings from app
+    function loadAppSettings() {
+      // Try to get app URL from meta tag or construct it
+      const appUrl = document.querySelector('meta[name="shopify-app-url"]')?.content || 
+                     `https://${shopDomain}/apps/shipping-progress-banner`;
+      
+      fetch(`${appUrl}/api/settings?shop=${shopDomain}`)
+        .then(res => res.json())
+        .then(settings => {
+          // Update appSettings with fetched values
+          appSettings = {
+            ...appSettings,
+            ...settings
+          };
+          
+          // Apply visual updates
+          block.style.setProperty('--progress-color', settings.progressColor);
+          block.style.setProperty('--bg-color', settings.backgroundColor);
+          block.style.setProperty('--text-color', settings.textColor);
+          
+          // Show/hide branding badge based on plan
+          const badgeEl = block.querySelector('[data-branding-badge]');
+          if (badgeEl) {
+            badgeEl.style.display = settings.plan === 'FREE' ? 'block' : 'none';
+          }
+          
+          // Check order limit and disable if exceeded
+          const limitExceededEl = block.querySelector('[data-limit-exceeded]');
+          if (settings.limitExceeded) {
+            // Hide main functionality
+            if (messageEl) messageEl.style.display = 'none';
+            if (progressTrack) progressTrack.style.display = 'none';
+            if (upsellContainer) upsellContainer.style.display = 'none';
+            
+            // Show limit exceeded message
+            if (limitExceededEl) limitExceededEl.style.display = 'block';
+            
+            return; // Stop execution
+          } else {
+            // Hide limit message if not exceeded
+            if (limitExceededEl) limitExceededEl.style.display = 'none';
+          }
+          
+          // Update upsell title if visible
+          const upsellTitle = block.querySelector('.shipping-progress-bar__upsell-title');
+          if (upsellTitle) {
+            upsellTitle.textContent = settings.upsellTitle;
+          }
+          
+          // Trigger progress update with new settings
+          updateProgress();
+        })
+        .catch(err => {
+          console.warn('Could not load app settings, using defaults:', err);
+          // Continue with fallback settings
+          updateProgress();
+        });
+    }
+    
+    function formatMoney(cents) {
+      return currencySymbol + (cents / 100).toFixed(2);
+    }
+    
+    // Track analytics event
+    function trackEvent(eventType, data = {}) {
+      if (!appSettings.enableAnalytics) return;
+      
+      const appUrl = document.querySelector('meta[name="shopify-app-url"]')?.content || 
+                     `https://${shopDomain}/apps/shipping-progress-banner`;
+      
+      fetch(`${appUrl}/api/analytics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shop: shopDomain,
+          eventType,
+          sessionId,
+          ...data
+        })
+      }).catch(err => console.warn('Analytics tracking failed:', err));
+    }
+    
+    function updateProgress() {
+      fetch('/cart.js')
+        .then(res => res.json())
+        .then(cart => {
+          const subtotal = cart.total_price / 100;
+          const remaining = Math.max(0, appSettings.threshold - subtotal);
+          const progress = Math.min(100, (subtotal / appSettings.threshold) * 100);
+          
+          // Update progress bar
+          fillEl.style.width = progress + '%';
+          
+          // Update ARIA attributes
+          if (progressTrack) {
+            progressTrack.setAttribute('aria-valuenow', Math.round(progress));
+            progressTrack.setAttribute('aria-valuetext', `${Math.round(progress)}% toward free shipping`);
+          }
+          
+          // Track view event (once per session)
+          if (!hasLoggedView) {
+            trackEvent('view', {
+              cartValue: subtotal,
+              amountRemaining: remaining
+            });
+            hasLoggedView = true;
+          }
+          
+          // Track cart increment
+          if (subtotal > lastCartValue && lastCartValue > 0) {
+            trackEvent('cart_increment', {
+              cartValue: subtotal,
+              amountRemaining: remaining
+            });
+          }
+          lastCartValue = subtotal;
+          
+          // Track threshold met (once)
+          if (remaining <= 0 && !hasMetThreshold) {
+            trackEvent('threshold_met', {
+              cartValue: subtotal
+            });
+            hasMetThreshold = true;
+          }
+          
+          // Update message with custom messages from settings
+          if (remaining > 0) {
+            const message = appSettings.belowThresholdMessage.replace('{amount}', formatMoney(remaining * 100));
+            messageEl.textContent = message;
+            
+            // Show upsell if enabled and below threshold
+            if (appSettings.showUpsell && upsellContainer) {
+              fetchUpsellProducts();
+              upsellContainer.style.display = 'block';
+            }
+          } else {
+            messageEl.textContent = appSettings.qualifiedMessage;
+            if (upsellContainer) {
+              upsellContainer.style.display = 'none';
+            }
+          }
+        })
+        .catch(err => console.error('Cart fetch error:', err));
+    }
+    
+    function fetchUpsellProducts() {
+      if (!upsellProductsEl) return;
+      
+      // Check upsell source from settings
+      if (appSettings.upsellSource === 'curated' && appSettings.curatedProductIds) {
+        // Fetch curated products by IDs
+        fetchCuratedProducts();
+      } else {
+        // Use smart recommendations based on cart
+        fetchRecommendations();
+      }
+    }
+    
+    function fetchCuratedProducts() {
+      const productIds = appSettings.curatedProductIds.split(',').map(id => id.trim()).filter(Boolean);
+      
+      if (productIds.length === 0) {
+        // Fall back to recommendations if no IDs provided
+        fetchRecommendations();
+        return;
+      }
+      
+      // Fetch products by ID (need to use Storefront API or product handles)
+      // For now, fall back to recommendations API
+      // TODO: Implement product-by-ID fetching via admin
+      fetchRecommendations();
+    }
+    
+    function fetchRecommendations() {
+      // Get first product from cart for recommendations
+      fetch('/cart.js')
+        .then(res => res.json())
+        .then(cart => {
+          if (cart.items.length === 0) {
+            // No items in cart, show random products
+            return fetch('/products.json?limit=' + appSettings.upsellProductCount);
+          }
+          
+          // Get product ID from first cart item
+          const firstItem = cart.items[0];
+          const productId = firstItem.product_id;
+          
+          // Use Shopify's Product Recommendations API
+          return fetch(`/recommendations/products.json?product_id=${productId}&limit=${appSettings.upsellProductCount}`);
+        })
+        .then(res => res.json())
+        .then(data => {
+          const products = data.products || [];
+          
+          if (products.length === 0) {
+            upsellProductsEl.innerHTML = '<p style="text-align: center; color: #9ca3af; font-size: 0.875rem;">No recommendations available</p>';
+            return;
+          }
+          
+          upsellProductsEl.innerHTML = products.slice(0, appSettings.upsellProductCount).map(product => `
+            <a 
+              href="/products/${product.handle}" 
+              class="shipping-progress-bar__upsell-product" 
+              data-product-id="${product.id}"
+              onclick="handleUpsellClick(event, '${product.id}')"
+              role="button"
+              tabindex="0"
+              aria-label="View ${product.title.replace(/'/g, '&apos;')}, priced at ${formatMoney(product.variants[0].price)}"
+            >
+              <img src="${product.images[0]?.src || product.featured_image || ''}" alt="" loading="lazy" aria-hidden="true">
+              <div class="shipping-progress-bar__upsell-product-title">${product.title}</div>
+              <div class="shipping-progress-bar__upsell-product-price">${formatMoney(product.variants[0].price)}</div>
+            </a>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Recommendations fetch error:', err);
+          upsellProductsEl.innerHTML = '<p style="text-align: center; color: #9ca3af; font-size: 0.875rem;">Unable to load products</p>';
+        });
+    }
+    
+    // Handle upsell product click
+    window.handleUpsellClick = function(event, productId) {
+      trackEvent('upsell_click', { productId });
+      // Let the default link behavior handle navigation
+      return true;
+    };
+    
+    // Load app settings first, then start updates
+    loadAppSettings();
+    
+    // Listen for cart updates
+    document.addEventListener('cart:updated', updateProgress);
+    
+    // Fallback polling every 2s
+    setInterval(updateProgress, 2000);
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Shipping Progress",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Threshold Settings"
+    },
+    {
+      "type": "number",
+      "id": "free_shipping_threshold",
+      "label": "Free Shipping Threshold",
+      "default": 50,
+      "info": "Amount required for free shipping"
+    },
+    {
+      "type": "header",
+      "content": "Messages"
+    },
+    {
+      "type": "text",
+      "id": "initial_message",
+      "label": "Initial Message",
+      "default": "Add items to qualify for free shipping!"
+    },
+    {
+      "type": "header",
+      "content": "Styling"
+    },
+    {
+      "type": "color",
+      "id": "progress_color",
+      "label": "Progress Bar Color",
+      "default": "#10b981"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#f9fafb"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#111827"
+    },
+    {
+      "type": "header",
+      "content": "Upsell Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_upsell",
+      "label": "Show Product Upsells",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "upsell_title",
+      "label": "Upsell Title",
+      "default": "Add these to reach free shipping:"
+    },
+    {
+      "type": "range",
+      "id": "upsell_product_count",
+      "label": "Number of Upsell Products",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "default": 2
+    }
+  ]
+}
+{% endschema %}
+

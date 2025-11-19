@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model AppSettings {
+  id                      String   @id @default(cuid())
+  shop                    String   @unique
+  freeShippingThreshold   Float    @default(50.0)
+  progressColor           String   @default("#10b981")
+  backgroundColor         String   @default("#f9fafb")
+  textColor               String   @default("#111827")
+  showUpsell              Boolean  @default(true)
+  upsellProductCount      Int      @default(2)
+  upsellSource            String   @default("recommendations") // "recommendations" or "curated"
+  curatedProductIds       String   @default("") // Comma-separated product IDs
+  belowThresholdMessage   String   @default("Add {amount} more for free shipping!")
+  qualifiedMessage        String   @default("🎉 You qualify for free shipping!")
+  upsellTitle             String   @default("Add these to reach free shipping:")
+  enableAnalytics         Boolean  @default(true)
+  // Billing fields
+  plan                    String   @default("FREE") // "FREE", "PRO", "PLUS"
+  ordersThisMonth         Int      @default(0)
+  billingCycleStart       DateTime?
+  subscriptionId          String?
+  subscriptionStatus      String?  // "active", "cancelled", "expired"
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id              String   @id @default(cuid())
+  shop            String
+  eventType       String   // "view", "cart_increment", "upsell_click", "threshold_met"
+  cartValue       Float?   // Cart value in dollars at time of event
+  amountRemaining Float?   // Amount remaining to threshold
+  productId       String?  // For upsell clicks
+  sessionId       String?  // Browser session identifier
+  createdAt       DateTime @default(now())
+  
+  @@index([shop, createdAt])
+  @@index([shop, eventType])
+}
