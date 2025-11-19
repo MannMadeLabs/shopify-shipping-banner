@@ -6,7 +6,7 @@
 import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { createSubscription, cancelSubscription, getActiveSubscription } from "../services/billing.server";
-import { prisma } from "../db.server";
+import prisma from "../db.server";
 
 /**
  * GET /api/billing - Check subscription status
