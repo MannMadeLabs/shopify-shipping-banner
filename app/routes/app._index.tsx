@@ -189,7 +189,6 @@ export default function Dashboard() {
         slot="primary-action"
         onClick={handleSubmit}
         {...(isLoading ? { loading: true } : {})}
-        {...(!isDirty ? { disabled: true } : {})}
       >
         Save Settings
       </s-button>
