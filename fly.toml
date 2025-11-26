@@ -6,8 +6,14 @@
 app = "shipping-progress-banner"
 primary_region = "iad"  # US East (Virginia) - good for Shopify
 
+# Force Docker build - skip auto-detection
 [build]
   dockerfile = "Dockerfile"
+  ignorefile = ".dockerignore"
+
+# Skip builders that might conflict
+[build.args]
+  NODE_ENV = "production"
 
 [env]
   NODE_ENV = "production"
