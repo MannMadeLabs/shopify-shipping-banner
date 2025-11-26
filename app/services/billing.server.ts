@@ -12,6 +12,19 @@ export interface BillingConfig {
 }
 
 /**
+ * Check if we're in test/development mode
+ * In production, this should be false to process real payments
+ */
+function isTestMode(): boolean {
+  // Use test mode in development, real mode in production
+  const nodeEnv = process.env.NODE_ENV || "development";
+  const forceTestMode = process.env.SHOPIFY_BILLING_TEST_MODE === "true";
+  
+  // Default: test mode in development, production mode otherwise
+  return nodeEnv === "development" || forceTestMode;
+}
+
+/**
  * Create a billing subscription using Shopify's Billing API
  * This creates an App Subscription for recurring charges
  */
@@ -20,13 +33,16 @@ export async function createSubscription(
   config: BillingConfig
 ): Promise<{ confirmationUrl: string; subscriptionId: string }> {
   const planConfig = BILLING_PLANS[config.plan];
+  const testMode = isTestMode();
+  
+  console.log(`[Billing] Creating ${testMode ? "TEST" : "LIVE"} subscription for ${config.shop} - Plan: ${config.plan}`);
 
   const response = await admin.graphql(
     `#graphql
-      mutation CreateAppSubscription($name: String!, $price: Decimal!, $returnUrl: URL!) {
+      mutation CreateAppSubscription($name: String!, $price: Decimal!, $returnUrl: URL!, $test: Boolean!) {
         appSubscriptionCreate(
           name: $name
-          test: true
+          test: $test
           lineItems: [
             {
               plan: {
@@ -55,6 +71,7 @@ export async function createSubscription(
         name: `${planConfig.name} Plan`,
         price: planConfig.price.toString(),
         returnUrl: config.returnUrl,
+        test: testMode,
       },
     }
   );

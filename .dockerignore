@@ -1,3 +1,47 @@
-.cache
-build
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build output
+build
+dist
+
+# Development
+.env
+.env.local
+.env.*.local
+*.sqlite
+*.sqlite-journal
+prisma/dev.sqlite
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Fly.io
+fly.toml
+
+# Git
+.git
+.gitignore
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs/

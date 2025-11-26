@@ -59,13 +59,14 @@ model AppSettings {
 model AnalyticsEvent {
   id              String   @id @default(cuid())
   shop            String
-  eventType       String   // "view", "cart_increment", "upsell_click", "threshold_met"
+  eventType       String   // "view", "cart_increment", "upsell_click", "threshold_met", "order_created"
   cartValue       Float?   // Cart value in dollars at time of event
   amountRemaining Float?   // Amount remaining to threshold
-  productId       String?  // For upsell clicks
-  sessionId       String?  // Browser session identifier
+  productId       String?  // For upsell clicks or order ID
+  sessionId       String?  // Browser session identifier or order number
   createdAt       DateTime @default(now())
   
   @@index([shop, createdAt])
   @@index([shop, eventType])
+  @@index([createdAt]) // For cleanup jobs
 }

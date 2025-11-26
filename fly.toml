@@ -1,0 +1,41 @@
+# fly.toml - Fly.io Configuration for Shipping Progress Banner
+# See https://fly.io/docs/reference/configuration/ for details
+
+# App name - will be created on first deploy
+# Change this to your desired app name (must be unique on Fly.io)
+app = "shipping-progress-banner"
+primary_region = "iad"  # US East (Virginia) - good for Shopify
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false  # Keep running for webhook reliability
+  auto_start_machines = true
+  min_machines_running = 1    # Always have at least 1 instance
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# Health check for the app
+[[services.http_checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/"
+

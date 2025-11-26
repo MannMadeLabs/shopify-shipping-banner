@@ -216,7 +216,7 @@
     const block = document.querySelector('.shipping-progress-bar');
     if (!block) return;
     
-    // Settings will be fetched from API, fallback to block settings
+    // Settings will be fetched from App Proxy, fallback to block settings
     let appSettings = {
       threshold: parseFloat(block.dataset.threshold) || 50,
       progressColor: getComputedStyle(block).getPropertyValue('--progress-color').trim() || '#10b981',
@@ -232,6 +232,10 @@
     
     const currencySymbol = block.dataset.currencySymbol || '$';
     const shopDomain = '{{ shop.permanent_domain }}';
+    
+    // App Proxy URL - requests go through Shopify's proxy which adds authentication
+    // Format: /apps/{subpath}?action={action}
+    const appProxyUrl = '/apps/shipping-bar';
     
     const messageEl = block.querySelector('[data-progress-message]');
     const fillEl = block.querySelector('[data-progress-fill]');
@@ -249,16 +253,19 @@
     let hasLoggedView = false;
     let lastCartValue = 0;
     let hasMetThreshold = false;
+    let settingsLoaded = false;
     
-    // Fetch settings from app
+    // Fetch settings from App Proxy (secure)
     function loadAppSettings() {
-      // Try to get app URL from meta tag or construct it
-      const appUrl = document.querySelector('meta[name="shopify-app-url"]')?.content || 
-                     `https://${shopDomain}/apps/shipping-progress-banner`;
-      
-      fetch(`${appUrl}/api/settings?shop=${shopDomain}`)
-        .then(res => res.json())
+      // Use App Proxy URL - Shopify handles authentication automatically
+      fetch(`${appProxyUrl}?action=settings`)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
         .then(settings => {
+          settingsLoaded = true;
+          
           // Update appSettings with fetched values
           appSettings = {
             ...appSettings,
@@ -303,8 +310,9 @@
           updateProgress();
         })
         .catch(err => {
-          console.warn('Could not load app settings, using defaults:', err);
-          // Continue with fallback settings
+          console.warn('Could not load app settings, using block defaults:', err);
+          settingsLoaded = true; // Mark as loaded to prevent retry loop
+          // Continue with fallback settings from block schema
           updateProgress();
         });
     }
@@ -313,18 +321,15 @@
       return currencySymbol + (cents / 100).toFixed(2);
     }
     
-    // Track analytics event
+    // Track analytics event via App Proxy (secure)
     function trackEvent(eventType, data = {}) {
       if (!appSettings.enableAnalytics) return;
       
-      const appUrl = document.querySelector('meta[name="shopify-app-url"]')?.content || 
-                     `https://${shopDomain}/apps/shipping-progress-banner`;
-      
-      fetch(`${appUrl}/api/analytics`, {
+      // Use App Proxy for secure analytics tracking
+      fetch(appProxyUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          shop: shopDomain,
           eventType,
           sessionId,
           ...data
@@ -449,21 +454,25 @@
             return;
           }
           
-          upsellProductsEl.innerHTML = products.slice(0, appSettings.upsellProductCount).map(product => `
-            <a 
-              href="/products/${product.handle}" 
-              class="shipping-progress-bar__upsell-product" 
-              data-product-id="${product.id}"
-              onclick="handleUpsellClick(event, '${product.id}')"
-              role="button"
-              tabindex="0"
-              aria-label="View ${product.title.replace(/'/g, '&apos;')}, priced at ${formatMoney(product.variants[0].price)}"
-            >
-              <img src="${product.images[0]?.src || product.featured_image || ''}" alt="" loading="lazy" aria-hidden="true">
-              <div class="shipping-progress-bar__upsell-product-title">${product.title}</div>
-              <div class="shipping-progress-bar__upsell-product-price">${formatMoney(product.variants[0].price)}</div>
-            </a>
-          `).join('');
+          upsellProductsEl.innerHTML = products.slice(0, appSettings.upsellProductCount).map(product => {
+            const title = product.title.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const price = formatMoney(product.variants[0].price);
+            const imageSrc = product.images[0]?.src || product.featured_image || '';
+            
+            return `
+              <a 
+                href="/products/${product.handle}" 
+                class="shipping-progress-bar__upsell-product" 
+                data-product-id="${product.id}"
+                role="link"
+                aria-label="View ${title}, priced at ${price}"
+              >
+                <img src="${imageSrc}" alt="" loading="lazy" aria-hidden="true">
+                <div class="shipping-progress-bar__upsell-product-title">${title}</div>
+                <div class="shipping-progress-bar__upsell-product-price">${price}</div>
+              </a>
+            `;
+          }).join('');
         })
         .catch(err => {
           console.error('Recommendations fetch error:', err);
@@ -471,21 +480,34 @@
         });
     }
     
-    // Handle upsell product click
-    window.handleUpsellClick = function(event, productId) {
-      trackEvent('upsell_click', { productId });
-      // Let the default link behavior handle navigation
-      return true;
-    };
+    // Handle upsell product click - using event delegation instead of global function
+    if (upsellProductsEl) {
+      upsellProductsEl.addEventListener('click', function(event) {
+        const productLink = event.target.closest('[data-product-id]');
+        if (productLink) {
+          const productId = productLink.dataset.productId;
+          trackEvent('upsell_click', { productId });
+          // Let the default link behavior handle navigation
+        }
+      });
+    }
     
     // Load app settings first, then start updates
     loadAppSettings();
     
-    // Listen for cart updates
+    // Listen for cart updates (Shopify standard event)
     document.addEventListener('cart:updated', updateProgress);
     
-    // Fallback polling every 2s
-    setInterval(updateProgress, 2000);
+    // Also listen for common AJAX cart events
+    document.addEventListener('ajaxCart:updated', updateProgress);
+    document.addEventListener('cart:change', updateProgress);
+    
+    // Fallback polling every 5s (reduced from 2s for better performance)
+    setInterval(function() {
+      if (settingsLoaded) {
+        updateProgress();
+      }
+    }, 5000);
   })();
 </script>
 

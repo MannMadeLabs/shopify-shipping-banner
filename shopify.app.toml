@@ -2,14 +2,19 @@
 
 client_id = "5330dac03565451296a89b38cade865e"
 name = "Shipping Progress Banner"
-application_url = "https://shopify-shipping-banner.onrender.com"
+handle = "shipping-progress-banner"
+
+# IMPORTANT: Update this URL after creating your Fly.io app
+# Run: fly apps create shipping-progress-banner
+# Then your URL will be: https://shipping-progress-banner.fly.dev
+application_url = "https://shipping-progress-banner.fly.dev"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 
 [webhooks]
-api_version = "2026-01"
+api_version = "2025-01"
 
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
@@ -19,13 +24,35 @@ api_version = "2026-01"
   topics = [ "app/uninstalled" ]
   uri = "/webhooks/app/uninstalled"
 
+  # Order tracking for billing limits
+  [[webhooks.subscriptions]]
+  topics = [ "orders/create" ]
+  uri = "/webhooks/orders/create"
+
+  # Subscription status updates
+  [[webhooks.subscriptions]]
+  topics = [ "app_subscriptions/update" ]
+  uri = "/webhooks/app/subscriptions_update"
+
+  # Shop updates (currency changes, etc.)
+  [[webhooks.subscriptions]]
+  topics = [ "shop/update" ]
+  uri = "/webhooks/shop/update"
+
   # Note: GDPR webhooks (customers/data_request, customers/redact, shop/redact)
   # are automatically configured by Shopify when you provide the endpoints
   # They don't need to be declared in shopify.app.toml
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+# Added read_orders for order count tracking
+scopes = "read_products,read_orders"
 
 [auth]
-redirect_urls = [ "https://shopify-shipping-banner.onrender.com/api/auth" ]
+redirect_urls = [ "https://shipping-progress-banner.fly.dev/auth/callback" ]
+
+[app_proxy]
+# App Proxy for storefront API requests
+url = "https://shipping-progress-banner.fly.dev/api/proxy"
+prefix = "apps"
+subpath = "shipping-bar"

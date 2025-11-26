@@ -76,7 +76,10 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const returnUrl = `https://${session.shop}/admin/apps/${process.env.SHOPIFY_APP_HANDLE || "shipping-progress-banner"}/app/billing/callback`;
+      // Return URL points to our billing callback route
+      // Shopify will redirect here after merchant approves/declines subscription
+      const appHandle = process.env.SHOPIFY_APP_HANDLE || "shipping-progress-banner";
+      const returnUrl = `https://${session.shop}/admin/apps/${appHandle}/app/billing/callback`;
 
       const { confirmationUrl, subscriptionId } = await createSubscription(admin, {
         shop: session.shop,
