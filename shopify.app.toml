@@ -4,10 +4,9 @@ client_id = "5330dac03565451296a89b38cade865e"
 name = "Shipping Progress Banner"
 handle = "shipping-progress-banner"
 
-# IMPORTANT: Update this URL after creating your Fly.io app
-# Run: fly apps create shipping-progress-banner
-# Then your URL will be: https://shipping-progress-banner.fly.dev
-application_url = "https://shipping-progress-banner.fly.dev"
+# Hosted on Railway.app
+# UPDATE: Replace with your actual Railway URL after deployment
+application_url = "https://shopify-shipping-banner.up.railway.app"
 embedded = true
 
 [build]
@@ -49,10 +48,10 @@ api_version = "2025-01"
 scopes = "read_products,read_orders"
 
 [auth]
-redirect_urls = [ "https://shipping-progress-banner.fly.dev/auth/callback" ]
+redirect_urls = [ "https://shopify-shipping-banner.up.railway.app/auth/callback" ]
 
 [app_proxy]
 # App Proxy for storefront API requests
-url = "https://shipping-progress-banner.fly.dev/api/proxy"
+url = "https://shopify-shipping-banner.up.railway.app/api/proxy"
 prefix = "apps"
 subpath = "shipping-bar"
